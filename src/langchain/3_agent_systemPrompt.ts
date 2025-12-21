@@ -1,55 +1,3 @@
-/*
-
-                                                              User asks a question
-                                                                      │
-                                                                      ▼
-                                                              ┌───────────────────────────┐
-                                                              │  User Message             │
-                                                              │  "What is the weather     │
-                                                              │   outside?"               │
-                                                              └───────────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                              ┌───────────────────────────┐
-                                                              │  ReAct Agent              │
-                                                              │  (Reasoning Step)         │
-                                                              │  - Needs location         │
-                                                              │  - User didn’t provide it │
-                                                              └───────────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                              ┌───────────────────────────┐
-                                                              │  Tool 1: get_user_location│
-                                                              │  - Reads context.user_id  │
-                                                              │  - No user input needed   │
-                                                              └───────────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                              ┌───────────────────────────┐
-                                                              │  Tool Output              │
-                                                              │  "New York"               │
-                                                              └───────────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                              ┌───────────────────────────┐
-                                                              │  Tool 2: get_weather      │
-                                                              │  - Uses city = "New York" │
-                                                              └───────────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                              ┌───────────────────────────┐
-                                                              │  Tool Output              │
-                                                              │  "It's always sunny..."   │
-                                                              └───────────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                              ┌───────────────────────────┐
-                                                              │  Final AI Response        │
-                                                              │  "The weather outside is  │
-                                                              │   sunny."                 │
-                                                              └───────────────────────────┘
-
-*/
 /****************************************************************************************
  * AGENT + TOOL SETUP WITH USER CONTEXT
  * --------------------------------------------------------------------------------------
@@ -65,6 +13,16 @@ import { ChatOpenAI } from "@langchain/openai";
 import "dotenv/config";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+
+const systemPrompt = `You are an expert weather assistant. 
+
+You have access to 2 tools:
+
+- get_user_location: Retrieves the user's current location based on their user ID.
+- get_weather: Retrieves the weather for a given city.
+
+If user asks about the weather, make sure you know the location first. If you can tell from the question that they mean wherever they are, use get_user_location to find their location. 
+Then use get_weather to get the weather for that location.`;
 
 /****************************************************************************************
  * TOOL 1: get_user_location
@@ -156,6 +114,15 @@ const config = {
     // Identifies the current user
     user_id: "1",
   },
+  db: {},
+};
+
+const qaconfig = {
+  context: {
+    // Identifies the current user
+    user_id: "3",
+  },
+  db: {},
 };
 
 /****************************************************************************************
@@ -204,12 +171,16 @@ const result = await agent.invoke(
   {
     messages: [
       {
+        role: "system",
+        content: systemPrompt,
+      },
+      {
         role: "user",
         content: "What is the weather outside?",
       },
     ],
   },
-  config // Context passed separately from messages at runtime
+  qaconfig // Context passed separately from messages at runtime
   /*
   🧠 Rule of thumb (very important)
   If a tool reads from config.context, you MUST provide context at invocation time.
@@ -218,4 +189,4 @@ const result = await agent.invoke(
 );
 
 // Log the full execution result (messages, tool calls, final answer)
-console.log(result.messages[result.messages.length - 1].content);
+console.log(result.messages);
