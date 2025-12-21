@@ -12,18 +12,16 @@ async function run() {
   });
 
   // Send a streaming chat request to the model
-  const stream = await openrouter.chat.send(
-    {
-      model: "mistralai/devstral-2512:free",
-      messages: [
-        {
-          role: "user",
-          content: "What is the meaning of life?",
-        },
-      ],
-      stream: true, // Enable streaming for real-time response
-    }
-  );
+  const stream = await openrouter.chat.send({
+    model: "mistralai/devstral-2512:free",
+    messages: [
+      {
+        role: "user",
+        content: "What is 2 + 2?",
+      },
+    ],
+    stream: true, // Enable streaming for real-time response
+  });
 
   // Iterate over the stream chunks and print content as it arrives
   for await (const chunk of stream) {
